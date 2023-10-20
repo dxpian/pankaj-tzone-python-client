@@ -39,7 +39,7 @@ class TcpClient(Thread):
                     data = s.recv(1024)
                     logging.debug("client received: {}".format(data))
                     cnt += 1
-                    if cnt >= 5: 
+                    if cnt >= 1: 
                         break
                 except socket.timeout: 
                     logging.error("socket clien timout:")

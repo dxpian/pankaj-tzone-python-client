@@ -206,6 +206,13 @@ class Packet:
         self.rtctime = f'{y:04}-{m:02}-{d:02} {H:02}:{M:02}:{S:02}'
         logging.debug(f"rtc time: {self.rtctime}")
 
+    def clear_gps_data(self): 
+        self.utc_time = ''
+        self.longitude = 0 
+        self.latitude = 0
+        self.speed = 0.0
+        self.angle = 0.0
+
     '''
     6 bytes. same as rtc time
     '''
@@ -385,9 +392,9 @@ class Packet:
         if len(data) != 1: 
             logging.error("Invalid alarm type data length")
             return 
-        self.alarm_type = data.hex()
+        self.alarm_type = data.hex().upper()
         str_alarm = check_alamr_type(data)
-        logging.debug(f"Alarm type: {str_alarm}")
+        logging.debug(f"Alarm type: {self.alarm_type}:[{str_alarm}]")
         
     '''
     1 bytes
@@ -658,58 +665,95 @@ class Packet:
         self.set_imei(data[12:20])
         self.set_rtc_time(data[20:26])
         gps_data_len = int.from_bytes(data[26:28])
+        pos = 28
         logging.debug("gps data length: {}".format(gps_data_len))
-        status = data[28:29]
-        self.set_utc_time(data[29:35])
-        latitude = data[35:39]
-        longitude = data[39:43]
-        self.set_gps(status, latitude, longitude)
-        self.set_direction(data[43:45])
-        self.set_speed(data[45:47])
-        self.set_lbs_data_len(data[47:49])
-        self.set_lbs_number(data[49:50])
-        self.set_lbs_signal(data[50:51])
-        self.set_mobile_code(data[51:53])
-        self.set_mobile_network_code(data[53:55])
-        self.set_location_area_code(data[55:57])
-        cell_id = data[57:61]
-        rxRev = data[61:62]
-        phy_cell_id = data[62:64]
-        earfcn = data[64:67]        
-        RSRP = data[67:68]
-        RSRQ = data[68:69]
-        RSSI = data[69:70]
+        self.clear_gps_data()
+        if gps_data_len > 0: 
+            if gps_data_len < 19:
+                logging.error("invalid gps length: {}".format(gps_data_len))
+            else:
+                for i in range(pos, pos+gps_data_len, 19):
+                    status = data[i: i + 1]                 
+                    self.set_utc_time(data[pos+1: pos+ 7])  
+                    latitude = data[pos+7:pos+11]           
+                    longitude = data[pos+11: pos+15]        
+                    self.set_gps(status, latitude, longitude)
+                    self.set_direction(data[pos+15:pos+17])
+                    self.set_speed(data[pos+17:pos+19])
+            pos += gps_data_len
+        else: 
+            logging.debug("No GPS data: len = 0")
+
+        self.set_lbs_data_len(data[pos:pos+2])  
+        pos += 2
+        self.set_lbs_number(data[pos:pos+1])    
+        pos += 1
+        self.set_lbs_signal(data[pos:pos+1])    
+        pos += 1
+        self.set_mobile_code(data[pos:pos+2])   
+        pos += 2
+        self.set_mobile_network_code(data[pos:pos+2])
+        pos += 2
+        self.set_location_area_code(data[pos:pos+2]) 
+        pos += 2
+        cell_id = data[pos:pos+ 4]   
+        pos += 4
+        rxRev = data[pos:pos+1]      
+        pos += 1
+        phy_cell_id = data[pos:pos + 2]
+        pos += 2
+        earfcn = data[pos : pos+ 3]    
+        pos += 3
+        RSRP = data[pos: pos + 1]      
+        pos += 1
+        RSRQ = data[pos: pos +1]      
+        pos += 1
+        RSSI = data[pos: pos + 1]  
+        pos += 1
         '''
         The status data length excluding “Status data length” itself. If this part is 0, there is no status data.
         # ERROR: protocol itself 2 bytes. but it is mismatched with real data, one byes should be compensated between longitude to status_data_len
         '''
-        status_data_len = data[70:71] 
-        self.set_alarm_type(data[71:72])
-        self.set_terminal_info(data[72:73])
-        self.set_gms_signal_strength(data[73:74])
-        self.set_gsm_status(data[74:75])
-        self.set_battery_voltage(data[75:77])
-        self.set_builtin_temperature(data[77:79])
-        self.set_builtin_humidity(data[79:81])
+        status_data_len = data[pos:pos + 1]     # 1 byte, protocol document said 2 bytes
+        pos += 1
+        self.set_alarm_type(data[pos: pos + 1]) # 1 byte
+        pos += 1
+        self.set_terminal_info(data[pos: pos + 1])      # 1 byte
+        pos += 1
+        self.set_gms_signal_strength(data[pos: pos + 1])    # 1 bytes
+        pos += 1
+        self.set_gsm_status(data[pos: pos + 1])             # 1 bytes
+        pos += 1
+        self.set_battery_voltage(data[pos: pos + 2])   
+        pos += 2
+        self.set_builtin_temperature(data[pos: pos + 2])
+        pos += 2
+        self.set_builtin_humidity(data[pos: pos + 2])
+        pos += 2
         # external temp/humidity data doesn't exist
         #external_temp = data[81:83]
         #external_humidity = data[83:85]
-        self.set_light_sensor_data(data[81:83])
-        self.set_shock_sensor_data(data[83:85])
-        wifi_data_len = int.from_bytes(data[85:87])
+        self.set_light_sensor_data(data[pos: pos + 2]) 
+        pos += 2
+        self.set_shock_sensor_data(data[pos: pos +2])
+        pos += 2
+        wifi_data_len = int.from_bytes(data[pos: pos + 2])
+        pos += 2
         logging.debug("wifi_data_len:{}".format(wifi_data_len))
-        pos = 87
         self.reset_wifi_data()
-        if wifi_data_len > 0:
+        if wifi_data_len > 0 :
             # 7 bytes per wifi. 6 bytes is for mac address. 1 bytes for RSSI value
-            for i in range(pos, pos+ wifi_data_len, 7):
-                wifi_mac = data[i:i+6]
-                wifi_rssi = data[i+6:i+7]
-                self.add_wifi(wifi_mac, wifi_rssi)
+            if wifi_data_len >= 7: 
+                for i in range(pos, pos+ wifi_data_len, 7):
+                    wifi_mac = data[i:i+6]
+                    wifi_rssi = data[i+6:i+7]
+                    self.add_wifi(wifi_mac, wifi_rssi)
             pos += wifi_data_len
-        
+        else: 
+            logging.error("Invalid wifi data length:{}".format(wifi_data_len))
         if pos + 6 != total_len: 
             logging.error("Packet length mismatched. Failed to anlayze all packet data")
+            return False
 
         '''
         The value range of this part is between 1 and 9999
