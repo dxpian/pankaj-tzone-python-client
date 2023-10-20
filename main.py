@@ -8,7 +8,7 @@ from utils.logutil import init_logger
 
 
 if __name__ == "__main__":
-    init_logger()
+    init_logger(terminal=True)
     cfgfile =  "config/config_local.json"
     if not os.path.isfile(cfgfile): 
         logging.error("cannot find config file: {}".format(cfgfile))

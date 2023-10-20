@@ -6,11 +6,14 @@ from datetime import datetime
 from termcolor import colored
 
 # initialize global logger
-def init_logger(logName = 'App.log'):
+def init_logger(logName = 'Server.log', terminal = True):
     os.makedirs('Log', exist_ok=True)
     FORMAT = "[%(levelname)s %(filename)s:%(lineno)s - %(funcName)s() %(asctime)s ]: %(message)s"
     #logging.basicConfig(filename='Log/{}'.format(logName), level=logging.DEBUG, filemode='w', format=FORMAT, datefmt='%d-%b-%y %H:%M:%S')
-    logging.basicConfig(level=logging.DEBUG,  format=FORMAT, datefmt='%d-%b-%y %H:%M:%S')
+    if terminal: # output to terminal
+        logging.basicConfig(level=logging.DEBUG,  format=FORMAT, datefmt='%d-%b-%y %H:%M:%S')
+    else: 
+        logging.basicConfig(filename='Log/{}'.format(logName), level=logging.DEBUG, filemode='w', format=FORMAT, datefmt='%d-%b-%y %H:%M:%S')
     logging.debug('System successfully launched')
 
 # init logger of engine
