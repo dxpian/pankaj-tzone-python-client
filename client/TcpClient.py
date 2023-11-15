@@ -19,7 +19,7 @@ class TcpClient(Thread):
         self.server = cfg.server
         self.port = int(self.cfg.port)
         self.data = bytearray.fromhex(self.cfg.data)
-
+        logging.info(f'socket client connect to server: [{self.server}]({self.port})')
 
     def run(self): 
         logging.debug("starting tcp client")
@@ -31,6 +31,7 @@ class TcpClient(Thread):
                 s.settimeout(4)
                 s.connect((self.server, self.port))
                 # receive time calibration data
+                logging.info("connected")
                 data = s.recv(128)
                 logging.debug(f"success to receive RTC time calibration from server:{data}")
                 try: 
@@ -52,6 +53,8 @@ class TcpClient(Thread):
             except KeyboardInterrupt: 
                 logging.info("keyboard interrupted")                
                 break
-        
+            except Exception as err: 
+                #logging.error(f"failed in connection: {err}")
+                continue
 
 
