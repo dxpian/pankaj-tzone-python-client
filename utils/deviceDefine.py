@@ -288,7 +288,7 @@ class Packet:
         if len(data) != 2: 
             logging.error("Invalid LBS data len format")
             return 
-        self.lbs_data_len = int.from_bytes(data)
+        self.lbs_data_len = byte_to_int(data)
         logging.debug("lbs data len = {}".format(self.lbs_data_len))
     
     '''
@@ -683,60 +683,68 @@ class Packet:
             pos += gps_data_len
         else: 
             logging.debug("No GPS data: len = 0")
-
         self.set_lbs_data_len(data[pos:pos+2])  
         pos += 2
-        self.set_lbs_number(data[pos:pos+1])    
-        pos += 1
-        self.set_lbs_signal(data[pos:pos+1])    
-        pos += 1
-        self.set_mobile_code(data[pos:pos+2])   
-        pos += 2
-        self.set_mobile_network_code(data[pos:pos+2])
-        pos += 2
-        self.set_location_area_code(data[pos:pos+2]) 
-        pos += 2
-        cell_id = data[pos:pos+ 4]   
-        pos += 4
-        rxRev = data[pos:pos+1]      
-        pos += 1
-        phy_cell_id = data[pos:pos + 2]
-        pos += 2
-        earfcn = data[pos : pos+ 3]    
-        pos += 3
-        RSRP = data[pos: pos + 1]      
-        pos += 1
-        RSRQ = data[pos: pos +1]      
-        pos += 1
-        RSSI = data[pos: pos + 1]  
-        pos += 1
+        pos_back = pos
+        if self.lbs_data_len >= 20: 
+            self.set_lbs_number(data[pos:pos+1])    
+            pos += 1
+            self.set_lbs_signal(data[pos:pos+1])    
+            pos += 1
+            self.set_mobile_code(data[pos:pos+2])   
+            pos += 2
+            self.set_mobile_network_code(data[pos:pos+2])
+            pos += 2
+            self.set_location_area_code(data[pos:pos+2]) 
+            pos += 2
+            cell_id = data[pos:pos+ 4]   
+            pos += 4
+            rxRev = data[pos:pos+1]      
+            pos += 1
+            phy_cell_id = data[pos:pos + 2]
+            pos += 2
+            earfcn = data[pos : pos+ 3]    
+            pos += 3
+            RSRP = data[pos: pos + 1]      
+            pos += 1
+            RSRQ = data[pos: pos +1]      
+            pos += 1
+            # RSSI = data[pos: pos + 1]  
+            # pos += 1
+        pos = pos_back + self.lbs_data_len
         '''
         The status data length excluding “Status data length” itself. If this part is 0, there is no status data.
         # ERROR: protocol itself 2 bytes. but it is mismatched with real data, one byes should be compensated between longitude to status_data_len
         '''
-        status_data_len = data[pos:pos + 1]     # 1 byte, protocol document said 2 bytes
-        pos += 1
-        self.set_alarm_type(data[pos: pos + 1]) # 1 byte
-        pos += 1
-        self.set_terminal_info(data[pos: pos + 1])      # 1 byte
-        pos += 1
-        self.set_gms_signal_strength(data[pos: pos + 1])    # 1 bytes
-        pos += 1
-        self.set_gsm_status(data[pos: pos + 1])             # 1 bytes
-        pos += 1
-        self.set_battery_voltage(data[pos: pos + 2])   
+        status_data_len = byte_to_int(data[pos:pos + 2])     # 1 byte, protocol document said 2 bytes
+        logging.debug(f"status data length:{status_data_len}")
         pos += 2
-        self.set_builtin_temperature(data[pos: pos + 2])
-        pos += 2
-        self.set_builtin_humidity(data[pos: pos + 2])
-        pos += 2
-        # external temp/humidity data doesn't exist
-        #external_temp = data[81:83]
-        #external_humidity = data[83:85]
-        self.set_light_sensor_data(data[pos: pos + 2]) 
-        pos += 2
-        self.set_shock_sensor_data(data[pos: pos +2])
-        pos += 2
+        pos_back = pos
+        if status_data_len >= 14: 
+            self.set_alarm_type(data[pos: pos + 1]) # 1 byte
+            pos += 1
+            self.set_terminal_info(data[pos: pos + 1])      # 1 byte
+            pos += 1
+            self.set_gms_signal_strength(data[pos: pos + 1])    # 1 bytes
+            pos += 1
+            self.set_gsm_status(data[pos: pos + 1])             # 1 bytes
+            pos += 1
+            self.set_battery_voltage(data[pos: pos + 2])   
+            pos += 2
+            self.set_builtin_temperature(data[pos: pos + 2])
+            pos += 2
+            self.set_builtin_humidity(data[pos: pos + 2])
+            pos += 2
+            # external temp/humidity data doesn't exist
+            #external_temp = data[81:83]
+            #external_humidity = data[83:85]
+            self.set_light_sensor_data(data[pos: pos + 2]) 
+            pos += 2
+            self.set_shock_sensor_data(data[pos: pos +2])
+            pos += 2
+            
+        pos = pos_back + status_data_len
+
         wifi_data_len = int.from_bytes(data[pos: pos + 2])
         pos += 2
         logging.debug("wifi_data_len:{}".format(wifi_data_len))
@@ -750,7 +758,7 @@ class Packet:
                     self.add_wifi(wifi_mac, wifi_rssi)
             pos += wifi_data_len
         else: 
-            logging.error("Invalid wifi data length:{}".format(wifi_data_len))
+            logging.error("No wifi data")
         if pos + 6 != total_len: 
             logging.error("Packet length mismatched. Failed to anlayze all packet data")
             return False
@@ -758,8 +766,9 @@ class Packet:
         '''
         The value range of this part is between 1 and 9999
         '''
+        logging.debug(f' position: {pos}')
         self.packet_index =  int.from_bytes(data[-6:-4])
-        
+        print(f'packet index: {self.packet_index}')
         '''
         The checked content is from the “protocol number” to the end at “CRC”, 
         including “protocol number”, excluding “CRC”.
