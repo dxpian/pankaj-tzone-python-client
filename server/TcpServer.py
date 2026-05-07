@@ -44,6 +44,7 @@ class TcpServer(Thread):
                 if not data:
                     break
                 logging.debug(f"server received data: {data.hex()}")
+                
                 # analyze data packet
                 packet = Packet()
                 if self.analyze_packet(data, packet): 
@@ -53,8 +54,12 @@ class TcpServer(Thread):
                     response = f"@ACK,{packet_index}#"
                     logging.info("sending response: {}".format(response))
                     conn.sendall(bytes(response, "utf-8"))
+                    command = '@CMD,*000000,201,55#,#'
+                    logging.info(f"sending command: {command}")
+                    conn.sendall(bytes(command), 'utf-8')
                 else: 
-                    logging.error("failed to parse data packet")
+                    logging.error(f"failed to parse data packet: {data}")
+                
                 
 
             except Exception as err: 
