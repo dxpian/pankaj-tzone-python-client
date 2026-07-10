@@ -42,7 +42,7 @@ class TcpClient(Thread):
         self.data_resp = bytearray.fromhex(self.cfg.data_resp)
         self.input_json = Path("Log/raw.json")
         self.retry_delay_sec = 1
-        self.send_interval_sec = 0.1
+        self.send_interval_sec = 0.01
 
         logging.info(f'socket client connect to server: [{self.server}]({self.port})')
 

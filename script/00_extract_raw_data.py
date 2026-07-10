@@ -54,7 +54,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--input_log",        
-        default="Log/190124110002379-1.log",
+        default="Log/190125070005457.log",
         help="Input log file path, e.g. 190124110002379-1.log",
     )
     parser.add_argument(
