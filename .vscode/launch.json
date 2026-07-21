@@ -20,6 +20,14 @@
             "program": "test.py",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Python: Simulate devices",
+            "type": "python",
+            "request": "launch",
+            "program": "main_simulate.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
 
     ]

@@ -1,6 +1,34 @@
 {
-    "server":{
-        "server":"104.225.140.128",
-        "port":18801
+
+    "server": {
+
+        "server": "13.158.55.22",
+
+        "port": 18801,
+
+        "api_url": "http:/13.158.55.22/:9000/api",
+
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtbWJwd2U3NjAwMDBtcmRkMDQ5dGRtd3ciLCJyb2xlIjowLCJpYXQiOjE3ODM3MjUzMDcsImV4cCI6MTgxNDgyOTMwN30.wax_ZbIRs58TI2NhAnUyjEfpHYKPX9xNwo7ceQOraUc"
+
+    },
+
+    "device": {
+
+        "temperature": [3, 7],
+
+        "humidity": [40, 80],
+
+        "battery": [40, 100]
+
+    },
+
+    "simulate": {
+
+        "interval_sec": 300,
+
+        "devices_file": "config/device_full.json"
+
     }
+
 }
+
